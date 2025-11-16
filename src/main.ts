@@ -142,24 +142,31 @@ class App {
     // 新しいゲームを開始
     if (mode === 'circular') {
       this.game = new CircularTetrisGame(this.renderer);
-      // 円形モードではカメラを上から見下ろす
-      this.renderer.camera.position.set(0, 20, 0.1);
-      this.renderer.camera.lookAt(0, 0, 0);
+      // 円形モードではカメラを上から見下ろす（カメラコントローラーは無効化）
+      const position = new THREE.Vector3(0, 20, 0.1);
+      const lookAt = new THREE.Vector3(0, 0, 0);
+      this.renderer.camera.position.copy(position);
+      this.renderer.camera.lookAt(lookAt);
+      this.renderer.cameraController.setBasePosition(position, lookAt);
+      this.renderer.cameraController.reset(); // 揺れを無効化
     } else if (mode === 'gravity-flip') {
       this.game = new GravityFlipGame(this.renderer, mode);
-      // 通常モードではカメラを正面から
-      this.renderer.camera.position.set(0, 0, 30);
-      this.renderer.camera.lookAt(0, 0, 0);
+      // 通常モードではカメラを正面から（カメラコントローラー有効）
+      const position = new THREE.Vector3(0, 0, 30);
+      const lookAt = new THREE.Vector3(0, 0, 0);
+      this.renderer.cameraController.setBasePosition(position, lookAt);
     } else if (mode === 'mirror') {
       this.game = new MirrorGame(this.renderer, mode);
-      // 通常モードではカメラを正面から
-      this.renderer.camera.position.set(0, 0, 30);
-      this.renderer.camera.lookAt(0, 0, 0);
+      // 通常モードではカメラを正面から（カメラコントローラー有効）
+      const position = new THREE.Vector3(0, 0, 30);
+      const lookAt = new THREE.Vector3(0, 0, 0);
+      this.renderer.cameraController.setBasePosition(position, lookAt);
     } else {
       this.game = new TetrisGame(this.renderer, mode);
-      // 通常モードではカメラを正面から
-      this.renderer.camera.position.set(0, 0, 30);
-      this.renderer.camera.lookAt(0, 0, 0);
+      // 通常モードではカメラを正面から（カメラコントローラー有効）
+      const position = new THREE.Vector3(0, 0, 30);
+      const lookAt = new THREE.Vector3(0, 0, 0);
+      this.renderer.cameraController.setBasePosition(position, lookAt);
     }
   }
 
@@ -172,6 +179,11 @@ class App {
 
     // 背景エフェクトの更新
     this.renderer.backgroundEffects.update(deltaTime, time);
+
+    // カメラの微妙な揺れ更新（円形モード以外）
+    if (this.currentMode !== 'circular') {
+      this.renderer.cameraController.update(time);
+    }
 
     if (this.game) {
       this.game.update(time);

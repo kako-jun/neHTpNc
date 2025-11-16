@@ -4,6 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
 import { BackgroundEffects } from './background';
+import { CameraController } from './camera-controller';
 
 export class GameRenderer {
   scene: THREE.Scene;
@@ -13,6 +14,7 @@ export class GameRenderer {
   bloomPass: UnrealBloomPass;
   glitchPass: GlitchPass;
   backgroundEffects: BackgroundEffects;
+  cameraController: CameraController;
 
   constructor(container: HTMLElement) {
     // シーン作成
@@ -78,6 +80,13 @@ export class GameRenderer {
 
     // 背景エフェクト（星と流れ星）
     this.backgroundEffects = new BackgroundEffects(this.scene);
+
+    // カメラコントローラー（微妙な視点の揺れ）
+    this.cameraController = new CameraController(
+      this.camera,
+      new THREE.Vector3(0, 0, 30),
+      new THREE.Vector3(0, 0, 0)
+    );
 
     // リサイズ対応
     window.addEventListener('resize', this.onWindowResize.bind(this));
