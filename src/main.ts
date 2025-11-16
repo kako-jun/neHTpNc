@@ -11,6 +11,7 @@ class App {
   private game: TetrisGame | CircularTetrisGame | GravityFlipGame | MirrorGame | null = null;
   private currentMode: GameMode = 'classic';
   private animationId: number | null = null;
+  private lastFrameTime = 0;
 
   constructor() {
     const app = document.getElementById('app')!;
@@ -164,6 +165,13 @@ class App {
 
   private animate(time: number) {
     this.animationId = requestAnimationFrame(this.animate.bind(this));
+
+    // デルタタイム計算
+    const deltaTime = this.lastFrameTime > 0 ? time - this.lastFrameTime : 0;
+    this.lastFrameTime = time;
+
+    // 背景エフェクトの更新
+    this.renderer.backgroundEffects.update(deltaTime, time);
 
     if (this.game) {
       this.game.update(time);

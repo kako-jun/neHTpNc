@@ -3,6 +3,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
+import { BackgroundEffects } from './background';
 
 export class GameRenderer {
   scene: THREE.Scene;
@@ -11,6 +12,7 @@ export class GameRenderer {
   composer: EffectComposer;
   bloomPass: UnrealBloomPass;
   glitchPass: GlitchPass;
+  backgroundEffects: BackgroundEffects;
 
   constructor(container: HTMLElement) {
     // シーン作成
@@ -74,6 +76,9 @@ export class GameRenderer {
     this.glitchPass.goWild = false;
     this.composer.addPass(this.glitchPass);
 
+    // 背景エフェクト（星と流れ星）
+    this.backgroundEffects = new BackgroundEffects(this.scene);
+
     // リサイズ対応
     window.addEventListener('resize', this.onWindowResize.bind(this));
   }
@@ -98,6 +103,7 @@ export class GameRenderer {
 
   dispose() {
     window.removeEventListener('resize', this.onWindowResize.bind(this));
+    this.backgroundEffects.dispose();
     this.renderer.dispose();
   }
 }
