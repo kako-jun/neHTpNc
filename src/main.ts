@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import { GameRenderer } from './renderer';
 import { TetrisGame } from './game';
 import { CircularTetrisGame } from './circular-game';
+import { GravityFlipGame } from './gravity-game';
+import { MirrorGame } from './mirror-game';
 import { GameMode } from './types';
 
 class App {
   private renderer: GameRenderer;
-  private game: TetrisGame | CircularTetrisGame | null = null;
+  private game: TetrisGame | CircularTetrisGame | GravityFlipGame | MirrorGame | null = null;
   private currentMode: GameMode = 'classic';
   private animationId: number | null = null;
 
@@ -27,6 +29,8 @@ class App {
       trio: document.getElementById('mode-trio')!,
       pento: document.getElementById('mode-pento')!,
       circular: document.getElementById('mode-circular')!,
+      'gravity-flip': document.getElementById('mode-gravity-flip')!,
+      mirror: document.getElementById('mode-mirror')!,
     };
 
     Object.entries(buttons).forEach(([mode, button]) => {
@@ -40,6 +44,7 @@ class App {
   }
 
   private setupControls() {
+    // キーボード操作
     document.addEventListener('keydown', (e) => {
       if (!this.game) return;
 
@@ -66,6 +71,36 @@ class App {
           break;
       }
     });
+
+    // タッチ操作
+    this.setupTouchControls();
+  }
+
+  private setupTouchControls() {
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnRotateLeft = document.getElementById('btn-rotate-left');
+    const btnRotateRight = document.getElementById('btn-rotate-right');
+
+    // タッチイベント（touchstart）とクリックイベントの両方をサポート
+    const addButtonListener = (element: HTMLElement | null, action: () => void) => {
+      if (!element) return;
+
+      const handler = (e: Event) => {
+        e.preventDefault();
+        if (this.game) {
+          action();
+        }
+      };
+
+      element.addEventListener('touchstart', handler, { passive: false });
+      element.addEventListener('click', handler);
+    };
+
+    addButtonListener(btnLeft, () => this.game!.moveLeft());
+    addButtonListener(btnRight, () => this.game!.moveRight());
+    addButtonListener(btnRotateLeft, () => this.game!.rotateCounterClockwise());
+    addButtonListener(btnRotateRight, () => this.game!.rotate());
   }
 
   private switchMode(mode: GameMode) {
@@ -108,6 +143,16 @@ class App {
       this.game = new CircularTetrisGame(this.renderer);
       // 円形モードではカメラを上から見下ろす
       this.renderer.camera.position.set(0, 20, 0.1);
+      this.renderer.camera.lookAt(0, 0, 0);
+    } else if (mode === 'gravity-flip') {
+      this.game = new GravityFlipGame(this.renderer, mode);
+      // 通常モードではカメラを正面から
+      this.renderer.camera.position.set(0, 0, 30);
+      this.renderer.camera.lookAt(0, 0, 0);
+    } else if (mode === 'mirror') {
+      this.game = new MirrorGame(this.renderer, mode);
+      // 通常モードではカメラを正面から
+      this.renderer.camera.position.set(0, 0, 30);
       this.renderer.camera.lookAt(0, 0, 0);
     } else {
       this.game = new TetrisGame(this.renderer, mode);

@@ -79,6 +79,82 @@
       font-size: 14px;
       opacity: 0.7;
     }
+
+    /* タッチ操作用コントロール */
+    #touch-controls {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 100;
+      display: none; /* デフォルトは非表示 */
+    }
+
+    @media (max-width: 768px), (pointer: coarse) {
+      #touch-controls {
+        display: block;
+      }
+
+      #instructions {
+        display: none;
+      }
+
+      #ui {
+        top: 10px;
+        left: 10px;
+      }
+
+      .mode-select button {
+        padding: 8px 12px;
+        font-size: 12px;
+        margin: 3px;
+      }
+
+      #score {
+        font-size: 18px;
+      }
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 70px);
+      grid-template-rows: repeat(2, 70px);
+      gap: 10px;
+    }
+
+    .control-btn {
+      width: 70px;
+      height: 70px;
+      background: rgba(0, 255, 255, 0.2);
+      border: 3px solid #0ff;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      transition: all 0.1s;
+      font-family: Arial, sans-serif;
+    }
+
+    .control-btn:active {
+      background: rgba(0, 255, 255, 0.5);
+      transform: scale(0.95);
+      box-shadow: 0 0 20px #0ff;
+    }
+
+    .control-btn.rotate {
+      background: rgba(255, 0, 255, 0.2);
+      border-color: #f0f;
+    }
+
+    .control-btn.rotate:active {
+      background: rgba(255, 0, 255, 0.5);
+      box-shadow: 0 0 20px #f0f;
+    }
   </style>
 </head>
 <body>
@@ -86,14 +162,26 @@
     <div id="ui">
       <div class="mode-select">
         <button id="mode-classic" class="active">Classic (4)</button>
-        <button id="mode-trio">Triomino (3)</button>
-        <button id="mode-pento">Pentomino (5)</button>
+        <button id="mode-trio">Trio (3)</button>
+        <button id="mode-pento">Pento (5)</button>
         <button id="mode-circular">Circular</button>
+        <button id="mode-gravity-flip">Gravity Flip</button>
+        <button id="mode-mirror">Mirror</button>
       </div>
       <div id="score">Score: 0</div>
     </div>
     <div id="instructions">
       ← → : Move | ↑ : Rotate | ↓ : Drop | Space : Hard Drop
+    </div>
+
+    <!-- タッチ操作用コントロール -->
+    <div id="touch-controls">
+      <div class="control-grid">
+        <div class="control-btn" id="btn-left">←</div>
+        <div class="control-btn" id="btn-right">→</div>
+        <div class="control-btn rotate" id="btn-rotate-left">↶</div>
+        <div class="control-btn rotate" id="btn-rotate-right">↷</div>
+      </div>
     </div>
   </div>
   <script type="module" src="/src/main.ts"></script>

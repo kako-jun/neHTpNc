@@ -1,4 +1,4 @@
-export type GameMode = 'classic' | 'trio' | 'pento' | 'circular';
+export type GameMode = 'classic' | 'trio' | 'pento' | 'circular' | 'gravity-flip' | 'mirror';
 
 export interface BlockPosition {
   x: number;

@@ -7,7 +7,10 @@ const GRID_WIDTH = 10;
 const GRID_HEIGHT = 20;
 const BLOCK_SIZE = 1;
 
-export class TetrisGame {
+/**
+ * Gravity Flip Mode: ブロックが下から上に落ちる逆重力テトリス
+ */
+export class GravityFlipGame {
   private renderer: GameRenderer;
   private state: GameState;
   private grid: (THREE.Mesh | null)[][];
@@ -19,7 +22,7 @@ export class TetrisGame {
   } | null = null;
 
   private dropCounter = 0;
-  private dropInterval = 1000; // ms
+  private dropInterval = 1000;
   private lastTime = 0;
 
   private shapes: TetrominoShape[] = [];
@@ -38,24 +41,22 @@ export class TetrisGame {
       .fill(null)
       .map(() => Array(GRID_WIDTH).fill(null));
 
-    this.shapes = getShapesByMode(mode);
+    this.shapes = getShapesByMode('classic');
 
     this.setupGrid();
     this.spawnPiece();
   }
 
   private setupGrid() {
-    // グリッドの枠線を表示
     const gridHelper = new THREE.GridHelper(GRID_WIDTH, GRID_WIDTH, 0x444444, 0x222222);
     gridHelper.rotation.x = Math.PI / 2;
     gridHelper.position.set(GRID_WIDTH / 2 - 0.5, GRID_HEIGHT / 2 - 0.5, -1);
     this.renderer.scene.add(gridHelper);
 
-    // 枠を描画
     const frameGeometry = new THREE.EdgesGeometry(
       new THREE.BoxGeometry(GRID_WIDTH, GRID_HEIGHT, 0.1)
     );
-    const frameMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff });
+    const frameMaterial = new THREE.LineBasicMaterial({ color: 0xff00ff }); // 違う色で区別
     const frame = new THREE.LineSegments(frameGeometry, frameMaterial);
     frame.position.set(GRID_WIDTH / 2 - 0.5, GRID_HEIGHT / 2 - 0.5, 0);
     this.renderer.scene.add(frame);
@@ -63,8 +64,6 @@ export class TetrisGame {
 
   private createBlockMesh(color: number): THREE.Mesh {
     const geometry = new THREE.BoxGeometry(BLOCK_SIZE * 0.9, BLOCK_SIZE * 0.9, BLOCK_SIZE * 0.9);
-
-    // エミッシブマテリアルでp5風の発光効果
     const material = new THREE.MeshPhongMaterial({
       color,
       emissive: color,
@@ -75,7 +74,6 @@ export class TetrisGame {
 
     const mesh = new THREE.Mesh(geometry, material);
 
-    // エッジを追加
     const edgesGeometry = new THREE.EdgesGeometry(geometry);
     const edgesMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
     const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
@@ -89,7 +87,7 @@ export class TetrisGame {
 
     const shape = this.shapes[Math.floor(Math.random() * this.shapes.length)];
     const startX = Math.floor(GRID_WIDTH / 2) - 1;
-    const startY = GRID_HEIGHT - 1;
+    const startY = 0; // 下から開始
 
     this.currentPiece = {
       shape,
@@ -98,19 +96,17 @@ export class TetrisGame {
       meshes: [],
     };
 
-    // メッシュを作成
     shape.blocks.forEach((block) => {
       const mesh = this.createBlockMesh(shape.color);
       const worldPos = this.getWorldPosition(
         this.currentPiece!.position.x + block.x,
-        this.currentPiece!.position.y - block.y
+        this.currentPiece!.position.y + block.y // 上に向かうので+
       );
       mesh.position.set(worldPos.x, worldPos.y, worldPos.z);
       this.renderer.scene.add(mesh);
       this.currentPiece!.meshes.push(mesh);
     });
 
-    // 衝突チェック
     if (this.checkCollision(0, 0)) {
       this.state.gameOver = true;
       console.log('Game Over!');
@@ -128,15 +124,15 @@ export class TetrisGame {
 
     for (const block of shape.blocks) {
       const x = position.x + block.x + offsetX;
-      const y = position.y - block.y + offsetY;
+      const y = position.y + block.y + offsetY;
 
-      // 境界チェック
-      if (x < 0 || x >= GRID_WIDTH || y < 0) {
+      // 境界チェック（上方向に移動するので上限をチェック）
+      if (x < 0 || x >= GRID_WIDTH || y >= GRID_HEIGHT) {
         return true;
       }
 
       // グリッド衝突チェック
-      if (y < GRID_HEIGHT && this.grid[y][x] !== null) {
+      if (y >= 0 && y < GRID_HEIGHT && this.grid[y][x] !== null) {
         return true;
       }
     }
@@ -164,7 +160,7 @@ export class TetrisGame {
       const block = this.currentPiece!.shape.blocks[i];
       const worldPos = this.getWorldPosition(
         this.currentPiece!.position.x + block.x,
-        this.currentPiece!.position.y - block.y
+        this.currentPiece!.position.y + block.y
       );
       mesh.position.set(worldPos.x, worldPos.y, worldPos.z);
     });
@@ -188,7 +184,6 @@ export class TetrisGame {
     shape.blocks = rotatedBlocks;
 
     if (this.checkCollision(0, 0)) {
-      // 回転できない場合は元に戻す
       shape.blocks = originalBlocks;
     } else {
       this.updatePieceMeshes();
@@ -202,7 +197,7 @@ export class TetrisGame {
 
     shape.blocks.forEach((block, i) => {
       const x = position.x + block.x;
-      const y = position.y - block.y;
+      const y = position.y + block.y;
 
       if (y >= 0 && y < GRID_HEIGHT && x >= 0 && x < GRID_WIDTH) {
         this.grid[y][x] = this.currentPiece!.meshes[i];
@@ -217,29 +212,28 @@ export class TetrisGame {
   private clearLines() {
     let linesCleared = 0;
 
-    for (let y = GRID_HEIGHT - 1; y >= 0; y--) {
+    for (let y = 0; y < GRID_HEIGHT; y++) {
       if (this.grid[y].every((cell) => cell !== null)) {
         linesCleared++;
 
-        // ライン削除のエフェクト
         this.grid[y].forEach((mesh) => {
           if (mesh) {
             this.renderer.scene.remove(mesh);
           }
         });
 
-        // 上のブロックを落とす
-        for (let yy = y; yy < GRID_HEIGHT - 1; yy++) {
-          this.grid[yy] = this.grid[yy + 1];
+        // 下のブロックを上げる（重力反転なので）
+        for (let yy = y; yy > 0; yy--) {
+          this.grid[yy] = this.grid[yy - 1];
           this.grid[yy].forEach((mesh) => {
             if (mesh) {
-              mesh.position.y -= 1;
+              mesh.position.y += 1;
             }
           });
         }
 
-        this.grid[GRID_HEIGHT - 1] = Array(GRID_WIDTH).fill(null);
-        y++; // 同じ行を再チェック
+        this.grid[0] = Array(GRID_WIDTH).fill(null);
+        y--; // 同じ行を再チェック
       }
     }
 
@@ -260,7 +254,8 @@ export class TetrisGame {
   }
 
   moveDown() {
-    if (!this.movePiece(0, -1)) {
+    // 重力反転なので上に移動
+    if (!this.movePiece(0, 1)) {
       this.lockPiece();
     }
   }
@@ -274,8 +269,8 @@ export class TetrisGame {
   }
 
   hardDrop() {
-    while (this.movePiece(0, -1)) {
-      // 下に移動し続ける
+    while (this.movePiece(0, 1)) {
+      // 上に移動し続ける
     }
     this.lockPiece();
   }
@@ -293,7 +288,6 @@ export class TetrisGame {
       this.dropCounter = 0;
     }
 
-    // ブロックを回転させてp5風の演出
     if (this.currentPiece) {
       this.currentPiece.meshes.forEach((mesh) => {
         mesh.rotation.x += 0.01;
@@ -307,7 +301,6 @@ export class TetrisGame {
   }
 
   destroy() {
-    // 全メッシュを削除
     if (this.currentPiece) {
       this.currentPiece.meshes.forEach((mesh) => this.renderer.scene.remove(mesh));
     }

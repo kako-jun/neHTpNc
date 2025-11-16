@@ -293,8 +293,13 @@ export class CircularTetrisGame {
   }
 
   rotate() {
-    // 円形モードでは回転は移動に変換
+    // 円形モードでは回転は移動に変換（右に移動）
     this.movePiece(0, 1);
+  }
+
+  rotateCounterClockwise() {
+    // 円形モードでは回転は移動に変換（左に移動）
+    this.movePiece(0, -1);
   }
 
   hardDrop() {
